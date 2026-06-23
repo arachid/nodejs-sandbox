@@ -1,6 +1,7 @@
 const express = require("express");
+const { transactions, TOTAL_TRANSACTIONS } = require("./fake-data");
 const app = express();
-const port = 5000;
+const port = 80;
 const failuresEnabled = true;
 
 // GET /projects
@@ -468,6 +469,32 @@ app.get("/logs", (req, res) => {
   const slice = logs.slice((page - 1) * pageSize, page * pageSize);
   res.json(slice);
 });
+
+app.get("/transactions", (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const size = Math.max(1, parseInt(req.query.pageSize, 10) || 10);
+  const start = (page - 1) * size;
+  const slice = transactions.slice(start, start + size);
+  const totalPages = Math.ceil(TOTAL_TRANSACTIONS / size);
+  const hasNext = page < totalPages;
+  const nextParams = new URLSearchParams({
+    page: String(page + 1),
+    pageSize: String(size),
+  });
+
+  setTimeout(() => {
+    res.json({
+      transactions: slice,
+      totalCount: TOTAL_TRANSACTIONS,
+      nextUrl: hasNext
+        ? `${req.protocol}://${req.get("host")}/transactions?${nextParams}`
+        : null,
+      page,
+      size,
+    });
+  }, 1000);
+});
+
 
 app.get("/auth", (req, res) => {
   res.status(401).json({ error: "failed to authenticate" });

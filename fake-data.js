@@ -143,4 +143,34 @@ function buildTransactions() {
 
 const transactions = buildTransactions();
 
-module.exports = { products, transactions, TOTAL_TRANSACTIONS };
+function handleTransactionsRequest(req, res, delayMs) {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const size = Math.max(1, parseInt(req.query.pageSize, 10) || 10);
+  const start = (page - 1) * size;
+  const slice = transactions.slice(start, start + size);
+  const totalPages = Math.ceil(TOTAL_TRANSACTIONS / size);
+  const hasNext = page < totalPages;
+  const nextParams = new URLSearchParams({
+    page: String(page + 1),
+    pageSize: String(size),
+  });
+
+  setTimeout(() => {
+    res.json({
+      transactions: slice,
+      totalCount: TOTAL_TRANSACTIONS,
+      nextUrl: hasNext
+        ? `${req.protocol}://${req.get("host")}/transactions?${nextParams}`
+        : null,
+      page,
+      size,
+    });
+  }, delayMs);
+}
+
+module.exports = {
+  products,
+  transactions,
+  TOTAL_TRANSACTIONS,
+  handleTransactionsRequest,
+};
